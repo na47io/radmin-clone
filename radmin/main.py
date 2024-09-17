@@ -1,3 +1,4 @@
+import os
 import sys
 import argparse
 from radmin.dump import do_dump
@@ -15,6 +16,7 @@ def parse_args(args):
     dump_parser.add_argument('--source', help='Name of the source environment to dump resources from.', required=True)
     dump_parser.add_argument('--templates', nargs='+', help='List of template ids to dump.', required=True)
     dump_parser.add_argument('--output', help='Output directory for dumped resources.', required=True)
+    dump_parser.add_argument('--db-conn-string', help='Connection string for the MongoDB database.', required=False)
 
     plan_parser = subparsers.add_parser('plan', help='Plan changes to the Clarion Reporting environment. Resources are read from all the .json files in the current directory or the input directory (see --chdir option) resursively')
     plan_parser.add_argument('--target', help='Name of the target environment to plan changes for.', required=True)
@@ -28,7 +30,11 @@ def parse_args(args):
 def do_action(args):
     if args.subcommand == 'dump':
         print(f'Dumping resources from {args.source} environment...')
-        do_dump(args.source, args.templates, args.output)
+        # if db_conn_string is not provided read RADMIN_DB_CONN_STRING from the environment
+        conn_string = args.db_conn_string or os.environ.get('RADMIN_DB_CONN_STRING')
+        if not conn_string:
+            raise ValueError('Pass a connection string to the MongoDB database using --db-conn-string or set RADMIN_DB_CONN_STRING in the environment.')
+        do_dump(args.source, args.templates, args.output, conn_string)
     elif args.subcommand == 'plan':
         print(f'Planning changes for {args.target} environment...')
         do_plan(args.target, args.output)

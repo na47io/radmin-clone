@@ -27,13 +27,8 @@ def mock_imports():
         yield mock_do_dump, mock_do_plan, mock_do_apply
 
 def test_do_action_with_fixture(mock_imports):
-    mock_do_dump, mock_do_plan, mock_do_apply = mock_imports
+    _, mock_do_plan, mock_do_apply = mock_imports
     from radmin.main import do_action
-    
-    # Test dump action
-    args = Mock(subcommand='dump', source='source', templates=['1', '2'], output='output')
-    do_action(args)
-    mock_do_dump.assert_called_once_with('source', ['1', '2'], 'output')
 
     # Test plan action
     args = Mock(subcommand='plan', target='target', output='output')
@@ -44,3 +39,18 @@ def test_do_action_with_fixture(mock_imports):
     args = Mock(subcommand='apply', plan='plan')
     do_action(args)
     mock_do_apply.assert_called_once_with('plan')
+
+def test_do_dump(mock_imports):
+    mock_do_dump, _, _ = mock_imports
+    from radmin.main import do_action
+    args = Mock(subcommand='dump', source='source', templates=['1', '2'], output='output', db_conn_string="stringy")
+    do_action(args)
+    mock_do_dump.assert_called_once_with('source', ['1', '2'], 'output', 'stringy')
+
+def test_do_dump_with_environment_conn_string(mock_imports):
+    mock_do_dump, _, _ = mock_imports
+    from radmin.main import do_action
+    args = Mock(subcommand='dump', source='source', templates=['1', '2'], output='output', db_conn_string=None)
+    with patch('os.environ', {'RADMIN_DB_CONN_STRING': 'env_string'}):
+        do_action(args)
+    mock_do_dump.assert_called_once_with('source', ['1', '2'], 'output', 'env_string')
